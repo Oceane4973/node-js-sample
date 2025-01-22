@@ -28,7 +28,7 @@ jobs:
           name: Tester le conteneur Docker
           command: |
             sleep 10  # Attendre que le conteneur soit prêt
-            curl -f http://localhost:8080 || (echo "Le conteneur Docker n'a pas répondu comme prévu" && exit 1)
+            curl -f http://localhost:3000 || (echo "Le conteneur Docker n'a pas répondu comme prévu" && exit 1)
 
       - run:
           name: Nettoyer le conteneur Docker
