@@ -7,82 +7,29 @@ jobs:
       image: ubuntu-2204:current
 
     steps:
-      # Étape 1 : Récupérer le code source
       - checkout
 
-      # Étape 2 : Installer les dépendances requises
-      - run:
-          name: Installer les dépendances
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y \
-              ca-certificates \
-              curl \
-              gnupg \
-              lsb-release
-
-      # Étape 3 : Ajouter la clé GPG officielle de Docker
-      - run:
-          name: Ajouter la clé GPG de Docker
-          command: |
-            sudo mkdir -p /etc/apt/keyrings
-            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
-              sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
-
-      # Étape 4 : Configurer le dépôt Docker
-      - run:
-          name: Ajouter le dépôt Docker
-          command: |
-            echo \
-              "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
-              $(lsb_release -cs) stable" | \
-              sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
-
-      # Étape 5 : Installer Docker Engine
-      - run:
-          name: Installer Docker Engine
-          command: |
-            sudo apt-get update
-            sudo apt-get install -y \
-              docker-ce \
-              docker-ce-cli \
-              containerd.io \
-              docker-buildx-plugin \
-              docker-compose-plugin
-
-      # Étape 6 : Démarrer et activer le service Docker
-      - run:
-          name: Démarrer et activer Docker
-          command: |
-            sudo systemctl start docker
-            sudo systemctl enable docker
-
-      # Étape 7 : Construire l'image Docker
       - run:
           name: Construire l'image Docker
           command: |
             sudo docker build -t my-app .
 
-      # Étape 8 : Vérifier que l'image Docker a été construite
       - run:
           name: Vérifier l'image Docker
           command: |
             sudo docker images | grep my-app
 
-      # Étape 9 : Exécuter le conteneur Docker
       - run:
           name: Exécuter le conteneur Docker
           command: |
             sudo docker run -d -p 8080:3000 --name my-app-container my-app
 
-      # Étape 10 : Tester que le conteneur fonctionne
       - run:
           name: Tester le conteneur Docker
           command: |
             sleep 10  # Attendre que le conteneur soit prêt
             curl -f http://localhost:8080 || (echo "Le conteneur Docker n'a pas répondu comme prévu" && exit 1)
 
-      # Étape 11 : Arrêter et nettoyer le conteneur
       - run:
           name: Nettoyer le conteneur Docker
           command: |
