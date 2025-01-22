@@ -1,44 +1,96 @@
-# Use the latest 2.1 version of CircleCI pipeline process engine.
-# See: https://circleci.com/docs/configuration-reference
 version: 2.1
 
-# Define a job to be invoked later in a workflow.
-# See: https://circleci.com/docs/jobs-steps/#jobs-overview & https://circleci.com/docs/configuration-reference/#jobs
 jobs:
   build-and-run-docker:
-    machine: # executor type
+    # Utilisation de l'exécuteur "machine" avec une image Ubuntu 22.04
+    machine:
       image: ubuntu-2204:current
 
     steps:
       # Étape 1 : Récupérer le code source
       - checkout
 
-      # Étape 2 : Mettre à jour le système et installer Docker si nécessaire
+      # Étape 2 : Installer les dépendances requises
       - run:
-          name: Install Docker
+          name: Installer les dépendances
           command: |
             sudo apt-get update
-            sudo apt-get install -y docker.io
+            sudo apt-get install -y \
+              ca-certificates \
+              curl \
+              gnupg \
+              lsb-release
 
-      # Étape 3 : Construire l'image Docker
+      # Étape 3 : Ajouter la clé GPG officielle de Docker
       - run:
-          name: Build Docker Image
+          name: Ajouter la clé GPG de Docker
           command: |
-            docker build -t my-app .
+            sudo mkdir -p /etc/apt/keyrings
+            curl -fsSL https://download.docker.com/linux/ubuntu/gpg | \
+              sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg
 
-      # Étape 4 : Vérifier que l'image a été construite
+      # Étape 4 : Configurer le dépôt Docker
       - run:
-          name: Verify Docker Image
-          command: docker images | grep my-app
-
-      # Étape 5 : Exécuter le conteneur Docker
-      - run:
-          name: Run Docker Container
+          name: Ajouter le dépôt Docker
           command: |
-            docker run -d -p 8080:8080 --name my-app-container my-app
+            echo \
+              "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+              $(lsb_release -cs) stable" | \
+              sudo tee /etc/apt/sources.list.d/docker.list > /dev/null
+
+      # Étape 5 : Installer Docker Engine
+      - run:
+          name: Installer Docker Engine
+          command: |
+            sudo apt-get update
+            sudo apt-get install -y \
+              docker-ce \
+              docker-ce-cli \
+              containerd.io \
+              docker-buildx-plugin \
+              docker-compose-plugin
+
+      # Étape 6 : Démarrer et activer le service Docker
+      - run:
+          name: Démarrer et activer Docker
+          command: |
+            sudo systemctl start docker
+            sudo systemctl enable docker
+
+      # Étape 7 : Construire l'image Docker
+      - run:
+          name: Construire l'image Docker
+          command: |
+            sudo docker build -t my-app .
+
+      # Étape 8 : Vérifier que l'image Docker a été construite
+      - run:
+          name: Vérifier l'image Docker
+          command: |
+            sudo docker images | grep my-app
+
+      # Étape 9 : Exécuter le conteneur Docker
+      - run:
+          name: Exécuter le conteneur Docker
+          command: |
+            sudo docker run -d -p 8080:3000 --name my-app-container my-app
+
+      # Étape 10 : Tester que le conteneur fonctionne
+      - run:
+          name: Tester le conteneur Docker
+          command: |
+            sleep 10  # Attendre que le conteneur soit prêt
+            curl -f http://localhost:8080 || (echo "Le conteneur Docker n'a pas répondu comme prévu" && exit 1)
+
+      # Étape 11 : Arrêter et nettoyer le conteneur
+      - run:
+          name: Nettoyer le conteneur Docker
+          command: |
+            sudo docker stop my-app-container
+            sudo docker rm my-app-container
 
 workflows:
   version: 2
-  build_and_push:
+  build-and-run:
     jobs:
       - build-and-run-docker
