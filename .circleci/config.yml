@@ -28,7 +28,7 @@ jobs:
           name: Tester le conteneur Docker
           command: |
             sleep 20  # Attendre que le conteneur soit prêt
-            curl -X GET http://localhost:3000/users || (echo "Le conteneur Docker n'a pas répondu comme prévu" && exit 1)
+            curl -X GET http://127.0.0.1:3000/users || (echo "Le conteneur Docker n'a pas répondu comme prévu" && exit 1)
 
       - run:
           name: Nettoyer le conteneur Docker
