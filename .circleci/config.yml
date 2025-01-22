@@ -12,31 +12,29 @@ jobs:
       - run:
           name: Construire l'image Docker
           command: |
-            sudo docker build -t my-app .
+            sudo docker build -t $DOCKERHUB_USERNAME/circleci-docker-tp2:$CIRCLE_SHA1 .
 
       - run:
           name: Vérifier l'image Docker
           command: |
-            sudo docker images | grep my-app
+            sudo docker images | grep $DOCKERHUB_USERNAME/circleci-docker-tp2:$CIRCLE_SHA1
 
       - run:
           name: Exécuter le conteneur Docker
           command: |
-            sudo docker run -d -p 80:8080 --name my-app-container my-app
+            sudo docker run -d -p 80:8080 --name my-app-container $DOCKERHUB_USERNAME/circleci-docker-tp2:$CIRCLE_SHA1
 
       - run:
           name: Tester le conteneur Docker
           command: |
             sleep 20  # Attendre que le conteneur soit prêt
             curl -X GET http://127.0.0.1/users || (echo "Le conteneur Docker n'a pas répondu comme prévu" && exit 1)
-
+            
       - run:
-        name: Push application Docker image
-        command: |
-          TAG=0.1.$CIRCLE_BUILD_NUM
-          docker build -t $DOCKERHUB_USERNAME/circleci-docker-tp2:$TAG .
-          echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin
-          docker push $DOCKERHUB_USERNAME/circleci-docker-tp2:$TAG
+          name: Push application Docker image
+          command: |
+            echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin
+            docker push $DOCKERHUB_USERNAME/circleci-docker-tp2:$CIRCLE_SHA1
 
       - run:
           name: Nettoyer le conteneur Docker
