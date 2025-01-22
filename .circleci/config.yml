@@ -31,12 +31,6 @@ jobs:
             curl -X GET http://127.0.0.1/users || (echo "Le conteneur Docker n'a pas répondu comme prévu" && exit 1)
             
       - run:
-          name: Push application Docker image
-          command: |
-            echo $DOCKERHUB_PASSWORD | docker login -u $DOCKERHUB_USERNAME --password-stdin
-            docker push $DOCKERHUB_USERNAME/circleci-docker-tp2:$CIRCLE_SHA1
-
-      - run:
           name: Nettoyer le conteneur Docker
           command: |
             sudo docker stop my-app-container

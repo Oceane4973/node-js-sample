@@ -1,0 +1,40 @@
+name: Build and Run Docker
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build-and-run-docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Build Docker image
+        run: |
+          docker build -t github-actions-docker-tp2:${{ github.sha }} .
+
+      - name: Verify Docker image
+        run: |
+          docker images | grep github-actions-docker-tp2:${{ github.sha }}
+
+      - name: Run Docker container
+        run: |
+          docker run -d -p 80:8080 --name my-app-container github-actions-docker-tp2:${{ github.sha }}
+
+      - name: Test Docker container
+        run: |
+          sleep 20
+          curl -X GET http://127.0.0.1/users || (echo "Le conteneur Docker n'a pas répondu comme prévu" && exit 1)
+
+      - name: Clean up Docker container
+        if: always()
+        run: |
+          docker stop my-app-container
+          docker rm my-app-container
